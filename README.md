@@ -1,5 +1,6 @@
 # Introduction to Machine Learning Final Project
 Final project for Introduction to Machine Learning course, utilizing various learning algorithms such as Item Response Theory, K-Nearest Neighbors, and Neural Nets
+
 Authors: Patrick Lin, Chloe Nguyen
 
 ![](report/intro-ml-project-01.jpg?raw=true)
