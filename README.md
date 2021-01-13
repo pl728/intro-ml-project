@@ -1,5 +1,4 @@
-# intro-ml-project
-Introduction to Machine Learning Project, utilizing multiple parameter Item Response Theory, kNN, Neural Nets
+# Final Project for Introduction to Machine Learning
 
 ![](report/intro-ml-project-01.jpg?raw=true)
 ![](report/intro-ml-project-02.jpg?raw=true)
