@@ -1,4 +1,5 @@
 # Final Project for Introduction to Machine Learning
+Authors: Patrick Lin, Chloe Nguyen
 
 ![](report/intro-ml-project-01.jpg?raw=true)
 ![](report/intro-ml-project-02.jpg?raw=true)
