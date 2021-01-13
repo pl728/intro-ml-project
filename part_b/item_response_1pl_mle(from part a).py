@@ -2,7 +2,7 @@
 
 import sys
 
-from project.utils import *
+from utils import *
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -200,8 +200,8 @@ def main():
     # alpha = [0.0005, 0.05]
     # iterations = [20, 30, 40, 50, 60]
 
-    alpha = [0.05]
-    iterations = [125]
+    alpha = [0.01]
+    iterations = [100]
     best_alpha, best_iterations, best_val_acc = None, None, -float(sys.maxsize)
     best_val_log_likelihood = []
     for a in alpha:
@@ -241,6 +241,7 @@ def main():
     ## evaluate on test data
     # print('validation accuracy: ' + str(best_val_acc))
     print("test accuracy: " + str(evaluate(test_data, train_theta, train_beta)))
+    print(train_beta, train_theta)
     #####################################################################
     plt.clf()
     five_questions_idx = random.sample([j for j in range(len(train_beta[0]))], 5)

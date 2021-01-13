@@ -1,7 +1,3 @@
-# AUTHOR : PATRICK LIN
-
-import sys
-
 from project.utils import *
 
 import numpy as np
@@ -17,9 +13,7 @@ def sigmoid(x):
 
 def neg_log_likelihood(data, theta, beta):
     """ Compute the negative log-likelihood.
-
     You may optionally replace the function arguments to receive a matrix.
-
     :param data: A dictionary {user_id: list, question_id: list,
     is_correct: list}
     :param theta: Vector
@@ -44,19 +38,17 @@ def neg_log_likelihood(data, theta, beta):
     #####################################################################
     #                       END OF YOUR CODE                            #
     #####################################################################
+
     return -log_lklihood
 
 
 def update_theta_beta(data, lr, theta, beta):
     """ Update theta and beta using gradient descent.
-
     You are using alternating gradient descent. Your update should look:
     for i in iterations ...
         theta <- new_theta
         beta <- new_beta
-
     You may optionally replace the function arguments to receive a matrix.
-
     :param data: A dictionary {user_id: list, question_id: list, is_correct: list}
     :param lr: float
     :param theta: Vector
@@ -119,9 +111,7 @@ def update_theta_beta(data, lr, theta, beta):
 
 def irt(data, val_data, lr, iterations):
     """ Train IRT model.
-
     You may optionally replace the function arguments to receive a matrix.
-
     :param data: A dictionary {user_id: list, question_id: list,
     is_correct: list}
     :param val_data: A dictionary {user_id: list, question_id: list,
@@ -130,22 +120,22 @@ def irt(data, val_data, lr, iterations):
     :param iterations: int
     :return: (theta, beta, val_acc_lst)
     """
-    # TODO: Initialize theta and beta.
-    # theta = np.full((1, 542), 100)
-    # beta = np.full((1, 1774), 50)
-    # theta = np.random.rand(1, 542)
-    # beta = np.random.rand(1, 7774)
-    theta = np.zeros((1, 542))
-    beta = np.zeros((1, 1774))
+    num_students = len(data["user_id"])
+    num_questions = len(data["question_id"])
+    theta = np.zeros((1, num_students))
+    beta = np.zeros((1, num_questions))
 
     val_acc_lst = []
-    log_likelihood_list = []
+    train_log_likelihood_list = []
+    val_log_likelihood_list = []
 
     for i in range(iterations):
         neg_lld = neg_log_likelihood(data, theta=theta, beta=beta)
+        val_neg_lld = neg_log_likelihood(val_data, theta=theta, beta=beta)
 
         # added
-        log_likelihood_list.append(neg_lld)
+        train_log_likelihood_list.append(neg_lld)
+        val_log_likelihood_list.append(val_neg_lld)
         #
         score = evaluate(data=val_data, theta=theta, beta=beta)
         val_acc_lst.append(score)
@@ -153,15 +143,13 @@ def irt(data, val_data, lr, iterations):
         theta, beta = update_theta_beta(data, lr, theta, beta)
 
     print("==================================================================")
-    # TODO: You may change the return values to achieve what you want.
-    return theta, beta, val_acc_lst, log_likelihood_list
+    return theta, beta, val_acc_lst, val_log_likelihood_list, train_log_likelihood_list
 
 
 def evaluate(data, theta, beta):
     """ Evaluate the model given data and return the accuracy.
     :param data: A dictionary {user_id: list, question_id: list,
     is_correct: list}
-
     :param theta: Vector
     :param beta: Vector
     :return: float
@@ -183,65 +171,39 @@ def main():
     val_data = load_valid_csv("../data")
     test_data = load_public_test_csv("../data")
 
-    #####################################################################
-    # TODO:                                                             #
-    # Tune learning rate and number of iterations. With the implemented #
-    # code, report the validation and test accuracy.                    #
-    #####################################################################
-    # find best alpha, iterations
-    # tune hyperparameters, commented to save time
-    # alpha = [0.0005, 0.001, 0.005, 0.01, 0.02, 0.025, 0.03, 0.04, 0.05, 0.075, 0.1, 0.2, 0.3, 0.4, 0.5]
-    # iterations = [10, 50, 75, 100, 125, 150, 200, 250]
-    # alpha = [0.0005, 0.005, 0.05]
-    # iterations = [100, 150, 200]
-    # alpha = [0.0025, 0.00375, 0.005, 0.00625, 0.0075]
-    # iterations = [125, 150, 175]
+    # Hyperparameters
+    best_alpha = 0.00625
+    best_iterations = 125
 
-    # alpha = [0.0005, 0.05]
-    # iterations = [20, 30, 40, 50, 60]
+    iterations = range(best_iterations)
 
-    alpha = [0.01]
-    iterations = [100]
-    best_alpha, best_iterations, best_val_acc = None, None, -float(sys.maxsize)
-    best_val_log_likelihood = []
-    for a in alpha:
-        for i in iterations:
-            val_theta, val_beta, val_acc_list, val_log_likelihood_list = irt(val_data, test_data, a, i)
-            val_accuracy = evaluate(test_data, val_theta, val_beta)
+    # Training
+    train_theta, train_beta, val_acc_lst, train_log_likelihood_list, val_log_likelihood_list = irt(train_data,
+                                                                                                   val_data,
+                                                                                                   best_alpha,
+                                                                                                   best_iterations)
 
-            if val_accuracy > best_val_acc:
-                best_val_acc = val_accuracy
-                best_alpha, best_iterations = a, i
-                best_val_log_likelihood = val_log_likelihood_list
+    print("Final Test Accuracy: " + str(evaluate(test_data, train_theta, train_beta)))
 
-    # training
-    train_theta, train_beta, train_acc_list, train_log_likelihood_list = irt(train_data,
-                                                                             train_data,
-                                                                             best_alpha,
-                                                                             best_iterations)
-
-    plt.plot(best_val_log_likelihood, label='val')
-    plt.plot(train_log_likelihood_list, label='train')
-    plt.xlabel("iterations")
-    plt.ylabel("NLLK")
-    plt.legend(loc="best")
+    # Log Likelihood Curves
+    plt.plot(iterations, train_log_likelihood_list)
+    plt.plot(iterations, val_log_likelihood_list)
+    plt.xlabel('Iterations')
+    plt.ylabel('Log Likelihood')
+    plt.title("Iterations vs. Log Likelihood")
+    plt.legend(["Training Log Likelihood", "Validation Log Likelihood"])
     plt.show()
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
-
-    #####################################################################
-    ## evaluate on test data
-    # print('validation accuracy: ' + str(best_val_acc))
-    print("test accuracy: " + str(evaluate(test_data, train_theta, train_beta)))
-    print(train_theta, train_beta)
-    #####################################################################
     plt.clf()
-    five_questions_idx = random.sample([j for j in range(len(train_beta[0]))], 5)
+
+    # Five questions
+    plt.clf()
+    five_questions_idx = random.sample([j for j in range(len(train_beta[0]))],
+                                       5)
     for i, j in enumerate(five_questions_idx):
         probabilities = []
         for theta in train_theta:
-            probabilities.append((np.exp(theta - train_beta[0][j])) / (1 + (np.exp(theta - train_beta[0][j]))))
+            probabilities.append((np.exp(theta - train_beta[0][j])) / (
+                    1 + (np.exp(theta - train_beta[0][j]))))
 
         plt.subplot(1, 5, i + 1)
         plt.scatter(train_theta, probabilities)
@@ -249,9 +211,6 @@ def main():
         plt.ylabel("p(c)")
 
     plt.show()
-    #####################################################################
-    #                       END OF YOUR CODE                            #
-    #####################################################################
 
 
 if __name__ == "__main__":
